@@ -13,6 +13,12 @@ token_ttl = 10000000
 class Authorization(object):
 
     def generate_token(self, username: str, password: str):
+        """
+        This method is used to generate a JWT basing on provided credentials. JWT is generated after creds are verified
+        :param username: str
+        :param password: str
+        :return: JWT on success
+        """
 
         key = "tempKey"  # The key will be generated on random basis and saved to DB
 
@@ -35,30 +41,21 @@ class Authorization(object):
         else:
             return {"error": "Wrong credentials"}
 
+
     def verify_token(self, token: str, action_id: int):
+        """
+        This method is used to verify JWT (without decoding it). Also verifies that given user has permissions
+        required to perform the requested action
+        :param token: str
+        :param action_id: int
+        :return: dict (confirmation on success)
+        """
 
-        key, token_creation_time = sql_manager.get_data_by_token(token)
-
-        try:
-            parsed_token = jwt.decode(token, key, algorithms="HS256")
-
-        except jwt.exceptions.InvalidSignatureError:
-            logging.error(f"Authorization: Invalid JWT received {token}")
-            return {"error": "Invalid token provided"}
-
-        username, password = parsed_token['user'], parsed_token['password']
-
-        logging.info(f"Authorization: parsed JWT {token}, username: {username}, password: {password}, "
-                     f"requested action type: {action_id}")
-
-        # Verify against SQL DB if such user exists.
-        if not sql_manager.get_users().__contains__(username):
+        # Check for provided token in SQL DB
+        if not sql_manager.get_all_tokens().__contains__(token):
             return {"error": f"Wrong credentials"}
 
-        # Verify against SQL if the password is correct (the password belongs to that user)
-        hashed_password = sql_manager.get_password_by_username(username)
-        if not hashed_password == hash(password):
-            return {"error": "Wrong credentials"}
+        _, token_creation_time = sql_manager.get_data_by_token(token)
 
         # Verify against SQL if the token is valid (not expired)
         #                                   - fetch the creation time and subtract it from the current time
@@ -68,11 +65,74 @@ class Authorization(object):
         # Bring the action types of all actions that current user is allowed to perform from SQL.
         # If the action types list contains the provided action type - return a confirmation.
         # Otherwise - return an error message.
-        if not action_id in sql_manager.get_allowed_actions_by_user(username):
+        if action_id not in sql_manager.get_allowed_actions_by_token(token):
             return {"error": "Forbidden action"}
 
         return {"Confirmed": "Permissions verified"}
 
+    def decode_token(self, token):
+        """
+        This method can be used to decode a JWT if the former is saved in SQL DB
+        :param token: valid JWT
+        :return: dict, decoded JWT
+        """
+        # Check for provided token in SQL DB
+        if not sql_manager.get_all_tokens().__contains__(token):
+            return {"error": f"Unlisted token"}
+
+        secret_key, _ = sql_manager.get_data_by_token(token)
+
+        try:
+            return jwt.decode(token, secret_key, algorithms="HS256")
+
+        except jwt.exceptions.InvalidSignatureError:
+            logging.error(f"Authorization: Invalid JWT received {token}")
+            return {"error": "Invalid token provided"}
+
+
+
+
+
+
+
+
+  # def verify_token(self, token: str, action_id: int):
+  #
+  #       key, token_creation_time = sql_manager.get_data_by_token(token)
+  #
+  #       try:
+  #           parsed_token = jwt.decode(token, key, algorithms="HS256")
+  #
+  #       except jwt.exceptions.InvalidSignatureError:
+  #           logging.error(f"Authorization: Invalid JWT received {token}")
+  #           return {"error": "Invalid token provided"}
+  #
+  #       username, password = parsed_token['user'], parsed_token['password']
+  #
+  #       logging.info(f"Authorization: parsed JWT {token}, username: {username}, password: {password}, "
+  #                    f"requested action type: {action_id}")
+  #
+  #       # Verify against SQL DB if such user exists.
+  #       if not sql_manager.get_users().__contains__(username):
+  #           return {"error": f"Wrong credentials"}
+  #
+  #       # Verify against SQL if the password is correct (the password belongs to that user)
+  #       hashed_password = sql_manager.get_password_by_username(username)
+  #       if not hashed_password == hash(password):
+  #           return {"error": "Wrong credentials"}
+  #
+  #       # Verify against SQL if the token is valid (not expired)
+  #       #                                   - fetch the creation time and subtract it from the current time
+  #       if not time.time() - token_creation_time < token_ttl:
+  #           return {"error": "Token has expired"}
+  #
+  #       # Bring the action types of all actions that current user is allowed to perform from SQL.
+  #       # If the action types list contains the provided action type - return a confirmation.
+  #       # Otherwise - return an error message.
+  #       if not action_id in sql_manager.get_allowed_actions_by_user(username):
+  #           return {"error": "Forbidden action"}
+  #
+  #       return {"Confirmed": "Permissions verified"}
 
 
 

@@ -66,6 +66,9 @@ def perform_action():
         logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
                      f"addressing the Authorization module")
 
+        if auth_token == "":
+            return {"error": f"Wrong credentials"}
+
         permissions_verification_result = authorization.verify_token(auth_token, action_id)
 
         if 'Confirmed' in permissions_verification_result.keys():
@@ -73,9 +76,6 @@ def perform_action():
 
         elif 'error' in permissions_verification_result.keys():
             return {"Error": permissions_verification_result['error']}
-
-        # validating_user_permissions = validate_user(auth_token, action_id)
-        #return {"Authorization": "Requested action result will be provided here to end customer"}
 
     except (KeyError, TypeError) as e:
         logging.error(f"Perform Action method called - missing: {e}")
