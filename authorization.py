@@ -3,7 +3,7 @@ import time
 import logging
 from sql_manager import SqlManager
 
-sql_manager = SqlManager()
+sql_manager = SqlManager("./config.ini")
 
 # 1648743766.707471
 
