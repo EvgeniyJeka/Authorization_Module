@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 app = Flask(__name__)
-authorization = Authorization()
+authorization = Authorization("./config.ini")
 
 
 @app.route('/authorization/sign_in', methods=['POST'])

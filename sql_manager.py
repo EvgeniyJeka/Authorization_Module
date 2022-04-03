@@ -6,7 +6,8 @@ import configparser
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import sqlalchemy as db
-from sqlalchemy import exc
+
+from set_initial_data import SetInitialData
 
 
 class SqlManager(object):
@@ -23,7 +24,7 @@ class SqlManager(object):
 
         try:
             self.cursor, self.engine = self.connect_me(hst, usr, pwd, db_name)
-            self.set_initial_data()
+            SetInitialData.set_initial_data(self.cursor, self.engine)
 
         except TypeError:
             logging.critical("SQL DB - Failed to connect, please verify SQL DB container is running")
@@ -68,79 +69,88 @@ class SqlManager(object):
             logging.critical("SQL DB - Failed to connect, reason is unclear")
             logging.critical(e)
 
-
-    def set_initial_data(self):
-
-        table_name = "users"
-        column_names = ["id", "username", "password", "jwt_token", "key", "token_creation_time", "allowed_actions"]
-        table_data = [['101', 'Greg Bradly', hash("Pigs"), "", "", "", "1 2"],
-                      ['202', 'Joe Anderson', hash("Truth"), "", "", "1 3"],
-                      ['103', 'Mary Poppins', hash("Journey"), "", "", "1 2"]]
-
-
-        tables = self.engine.table_names()
-
-        # Creating new table to store the file content if not exist.
-        if table_name not in tables:
-            logging.info(f"{table_name} table is missing! Creating the {table_name} table")
-            metadata = db.MetaData()
-
-            # Creating table - column names are provided in a tuple
-            columns_list = [db.Column(x, db.String(255)) for x in column_names]
-
-            # SQL Alchemy table instance is passed to the "fill_table" method
-            table_emp = db.Table(table_name, metadata, *columns_list, extend_existing=True)
-            metadata.create_all(self.engine)
-
-            self.fill_table(table_name, table_data, table_emp, column_names)
-
-    def fill_table(self, file_name, table_data, table_emp, column_names):
-        """
-         This method can be used to fill a table with data
-        :param file_name:  Table name, str
-        :param table_data: a list - each element will become a record in the table
-        :param table_emp: Sql alchemy instance that represents the table
-        :param column_names: Table columns list
-        :return:
-        """
-
-        logging.info(f"Executer: Filling the table '{file_name}' with data")
-
-        added_values = []
-
-        for row in table_data:
-            element = {}
-            for column_number in range(0, len(column_names)):
-                element[column_names[column_number]] = row[column_number]
-
-            added_values.append(element)
-
-        query = table_emp.insert().values([*added_values])
-        self.cursor.execute(query)
-
-        return {"response": "DB was successfully updated"}
-
     def get_users(self)-> set:
-        return {"JustMe", "JustYou"}
+        result = set()
+
+        metadata = db.MetaData()
+        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_])
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+
+        for row in fetched_data:
+            result.add(row[1])
+
+        return result
 
     def get_all_tokens(self)->set:
-        return {"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiSnVzdE1lIiwicGFzc3dvcmQiOiJNeVBh"
-                "c3N3b3JkIn0.Rq500BSVurkKXmwjsu-_dskPeS7VezfpF-C0qovipv8"}
+        result = set()
 
-    def save_jwt_key_time(self, encoded_jwt, key, token_creation_time):
-        return True
+        metadata = db.MetaData()
+        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_])
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+
+        for row in fetched_data:
+            result.add(row[3])
+
+        return result
+
+    def save_jwt_key_time(self, username, encoded_jwt, key, token_creation_time):
+
+        try:
+            metadata = db.MetaData()
+            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+            query = db.update(table_).\
+                values(jwt_token=encoded_jwt, key=key, token_creation_time=token_creation_time)\
+                .where(table_.columns.username == username)
+
+            self.cursor.execute(query)
+            return True
+
+        except Exception as e:
+            logging.critical(f"Authorization: Failed to insert the JWT token to SQL DB")
+            return False
+
+
 
     def get_password_by_username(self, username):
-        return hash("MyPassword")
+        metadata = db.MetaData()
+        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.username == username)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+        return fetched_data[0][2]
 
     def get_data_by_token(self, token):
-        return "tempKey", 1648743766.707471
+        metadata = db.MetaData()
+        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.jwt_token == token)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+
+        return fetched_data[0][4], float(fetched_data[0][5])
 
     def get_allowed_actions_by_token(self, token):
-        return [1, 2, 3]
+        metadata = db.MetaData()
+        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.jwt_token == token)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+        return [int(x) for x in fetched_data[0][6].split(" ")]
 
 # DB TABLE should contain the following rows: user ID, username, password (hashed),
 # JWT generation key, JWT generation time
 
 if __name__ == '__main__':
     manager = SqlManager("./config.ini")
+    #print(manager.get_password_by_username("Greg Bradly"))
+    print(manager.get_allowed_actions_by_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiR3JlZyBCcmFkbHkiLCJwYXNzd29yZCI6IlBpZ3MifQ.9quZkjutCEMpC8Vh5YGzdeWnppWYrSmxJgxkAZdmRK8"))
+

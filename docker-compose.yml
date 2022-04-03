@@ -1,0 +1,27 @@
+version: '3'
+
+networks:
+  authorization_main:
+    driver: bridge
+
+services:
+      
+  cabin_db:
+    image: mysql:8.0.27
+    volumes:
+      - "./.mysql-data/db:/var/lib/mysql"
+    restart: always
+    ports:
+      - 3306:3306
+    networks:
+      - authorization_main
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: sys
+
+      
+
+
+
+
+
