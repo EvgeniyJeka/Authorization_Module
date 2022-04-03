@@ -85,7 +85,7 @@ class Authorization(object):
         # Verify against SQL if the token is valid (not expired)
         #                                   - fetch the creation time and subtract it from the current time
         if not time.time() - token_creation_time < self.token_ttl:
-            logging.error(f"Token TTL: {self.token_ttl}, current age: {not time.time() - token_creation_time}")
+            logging.error(f"Token TTL: {self.token_ttl}, current age: {time.time() - token_creation_time}")
             return {"error": "Token has expired"}
 
         # Bring the action types of all actions that current user is allowed to perform from SQL.

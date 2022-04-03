@@ -31,6 +31,9 @@ logging.basicConfig(level=logging.INFO)
 # "Wrong credentials" (JWT not in DB)
 # "Expired Token" (The token has expired)
 
+# Move hard-code to constants / config
+# Consider to add API method that would return JWT TTL
+
 
 app = Flask(__name__)
 authorization = Authorization("./config.ini")
@@ -56,6 +59,7 @@ def sign_in():
     except (KeyError, TypeError) as e:
         logging.error(f"Sign In method called - credentials weren't provided: {e}")
         return {"Error": "Authorization: please provide valid credentials in request"}
+
 
 @app.route('/authorization/sign_out', methods=['POST'])
 def sign_out():
