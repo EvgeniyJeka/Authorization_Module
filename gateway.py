@@ -57,6 +57,23 @@ def sign_in():
         logging.error(f"Sign In method called - credentials weren't provided: {e}")
         return {"Error": "Authorization: please provide valid credentials in request"}
 
+@app.route('/authorization/sign_out', methods=['POST'])
+def sign_out():
+    try:
+        data = request.get_json()
+        token = data['token']
+        logging.info(f"Authorization: Sign Out request received, JWT in request: {token}")
+
+        sign_out_performed = authorization.sign_out(token)
+
+        if sign_out_performed:
+            return {"Authorization": "Sign out confirmed", "Token": token}
+
+
+    except (KeyError, TypeError) as e:
+        logging.error(f"Sign Out method called - invalid request: {e}")
+        return {"Error": "Authorization: please provide valid credentials in request"}
+
 
 @app.route('/authorization/perform_action', methods=['POST'])
 def perform_action():

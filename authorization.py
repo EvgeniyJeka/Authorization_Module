@@ -31,6 +31,9 @@ class Authorization(object):
         hash = d.hexdigest()
         return hash
 
+    def sign_out(self, token):
+        return sql_manager.terminate_token(token)
+
     def generate_token(self, username: str, password: str):
         """
         This method is used to generate a JWT basing on provided credentials. JWT is generated after creds are verified

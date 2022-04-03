@@ -113,7 +113,23 @@ class SqlManager(object):
             return True
 
         except Exception as e:
-            logging.critical(f"Authorization: Failed to insert the JWT token to SQL DB")
+            logging.critical(f"Authorization: Failed to insert the JWT token to SQL DB: {e}")
+            return False
+
+    def terminate_token(self, token):
+        try:
+            metadata = db.MetaData()
+            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+
+            query = db.update(table_).\
+                values(token_creation_time=0)\
+                .where(table_.columns.jwt_token == token)
+
+            self.cursor.execute(query)
+            return True
+
+        except Exception as e:
+            logging.critical(f"Authorization: Failed to insert the JWT token to SQL DB: {e}")
             return False
 
 
