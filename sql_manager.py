@@ -47,7 +47,7 @@ class SqlManager(object):
             url = f'mysql+pymysql://{usr}:{pwd}@{hst}:3306/{db_name}'
 
             # Create an engine object.
-            engine = create_engine(url, echo=True)
+            engine = create_engine(url, echo=False)
 
             # Create database if it does not exist.
             if not database_exists(engine.url):
@@ -126,12 +126,11 @@ class SqlManager(object):
                 .where(table_.columns.jwt_token == token)
 
             self.cursor.execute(query)
-            return True
+            return {"Token Termination": "Confirmed"}
 
         except Exception as e:
             logging.critical(f"Authorization: Failed to insert the JWT token to SQL DB: {e}")
-            return False
-
+            return {"error": "Token Termination failed"}
 
 
     def get_password_by_username(self, username):
@@ -167,6 +166,5 @@ class SqlManager(object):
 
 if __name__ == '__main__':
     manager = SqlManager("./config.ini")
-    #print(manager.get_password_by_username("Greg Bradly"))
-    print(manager.get_allowed_actions_by_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiR3JlZyBCcmFkbHkiLCJwYXNzd29yZCI6IlBpZ3MifQ.9quZkjutCEMpC8Vh5YGzdeWnppWYrSmxJgxkAZdmRK8"))
-
+    a = manager.terminate_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.VgPvaawMbCuoq5hBkFhNfubq-mTm5dkR2FG1lEDDhOg3333")
+    print(a)

@@ -66,9 +66,10 @@ def sign_out():
 
         sign_out_performed = authorization.sign_out(token)
 
-        if sign_out_performed:
+        if 'error' not in sign_out_performed.keys():
             return {"Authorization": "Sign out confirmed", "Token": token}
 
+        return sign_out_performed
 
     except (KeyError, TypeError) as e:
         logging.error(f"Sign Out method called - invalid request: {e}")

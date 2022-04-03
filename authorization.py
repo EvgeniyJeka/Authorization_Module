@@ -32,6 +32,10 @@ class Authorization(object):
         return hash
 
     def sign_out(self, token):
+        # Check for provided token in SQL DB
+        if not sql_manager.get_all_tokens().__contains__(token):
+            return {"error": f"Wrong credentials"}
+
         return sql_manager.terminate_token(token)
 
     def generate_token(self, username: str, password: str):
@@ -115,8 +119,8 @@ class Authorization(object):
 
 if __name__ == '__main__':
     mod = Authorization("./config.ini")
-    cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiSm9lIEFuZGVyc29uIiwicGFzc3dvcmQiOiJUcnV0aCJ9.lHBCIXuUlmhV5VUCPJWT2k-pq7FN83sMp5LwFMZzFgg"
-    a = mod.verify_token(cc, 1)
+    cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.VgPvaawMbCuoq5hBkFhNfubq-mTm5dkR2FG1lEDDhOg3"
+    a = mod.sign_out(cc)
     print(a)
 
 
