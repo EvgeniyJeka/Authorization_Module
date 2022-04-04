@@ -6,6 +6,7 @@ from constants import *
 from sql_manager import SqlManager
 import hashlib
 import configparser
+import random
 
 sql_manager = SqlManager(CONFIG_FILE_PATH)
 
@@ -36,6 +37,9 @@ class Authorization(object):
 
         return sql_manager.terminate_token(token)
 
+    def key_gen(self):
+        return "key" + str(random.randint(1000, 10000))
+
     def generate_token(self, username: str, password: str):
         """
         This method is used to generate a JWT basing on provided credentials. JWT is generated after creds are verified
@@ -44,7 +48,7 @@ class Authorization(object):
         :return: JWT on success
         """
 
-        key = "tempKey"  # The key will be generated on random basis and saved to DB
+        key = self.key_gen()  # The key will be generated on random basis and saved to DB
 
         # Check if given username exists in SQL DB, if it doesn't - return an error
         if not sql_manager.get_users().__contains__(username):

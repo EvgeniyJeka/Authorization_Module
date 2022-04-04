@@ -34,7 +34,6 @@ logging.basicConfig(level=logging.INFO)
 # "Wrong credentials" (JWT not in DB)
 # "Expired Token" (The token has expired)
 
-# Move hard-code to constants / config
 # Consider to add API method that would return JWT TTL
 
 
