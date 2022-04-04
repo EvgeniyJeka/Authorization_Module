@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import sqlalchemy as db
 
+from constants import USERS_TABLE_NAME
 from set_initial_data import SetInitialData
 
 
@@ -73,7 +74,7 @@ class SqlManager(object):
         result = set()
 
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_])
         ResultProxy = self.cursor.execute(query)
@@ -88,7 +89,7 @@ class SqlManager(object):
         result = set()
 
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_])
         ResultProxy = self.cursor.execute(query)
@@ -103,7 +104,7 @@ class SqlManager(object):
 
         try:
             metadata = db.MetaData()
-            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+            table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
             query = db.update(table_).\
                 values(jwt_token=encoded_jwt, key=key, token_creation_time=token_creation_time)\
@@ -119,7 +120,7 @@ class SqlManager(object):
     def terminate_token(self, token):
         try:
             metadata = db.MetaData()
-            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+            table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
             query = db.update(table_).\
                 values(token_creation_time=0)\
@@ -135,7 +136,7 @@ class SqlManager(object):
 
     def get_password_by_username(self, username):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.username == username)
         ResultProxy = self.cursor.execute(query)
@@ -144,7 +145,7 @@ class SqlManager(object):
 
     def get_data_by_token(self, token):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.jwt_token == token)
         ResultProxy = self.cursor.execute(query)
@@ -154,7 +155,7 @@ class SqlManager(object):
 
     def get_allowed_actions_by_token(self, token):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.jwt_token == token)
         ResultProxy = self.cursor.execute(query)

@@ -2,6 +2,7 @@ from flask import request, Flask
 import logging
 
 from authorization import Authorization
+from constants import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,6 +18,8 @@ logging.basicConfig(level=logging.INFO)
 #
 # Sign in method - verifies provided user credentials, generates JWT basing on random KEY
 # Generated JWT , the KEY and the exact time are saved in SQL DB.
+#
+# Sign out method - modifies the JWT creation time in SQL DB, sets it to 0 (the token expires)
 #
 # Perform Action methods - receives JWT and action type (ID).
 # Verifies the JWT exists in SQL DB.
@@ -36,10 +39,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 app = Flask(__name__)
-authorization = Authorization("./config.ini")
+authorization = Authorization(CONFIG_FILE_PATH)
 
 
-@app.route('/authorization/sign_in', methods=['POST'])
+@app.route(REST_API_SIGN_IN, methods=['POST'])
 def sign_in():
     try:
         data = request.get_json()
@@ -54,14 +57,12 @@ def sign_in():
         elif 'error' in produced_token.keys():
             return {"Error": produced_token['error']}
 
-        return {"Authorization": "JWT will be provided here to end customer"}
-
     except (KeyError, TypeError) as e:
         logging.error(f"Sign In method called - credentials weren't provided: {e}")
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/sign_out', methods=['POST'])
+@app.route(REST_API_SIGN_OUT, methods=['POST'])
 def sign_out():
     try:
         data = request.get_json()
@@ -80,7 +81,7 @@ def sign_out():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/perform_action', methods=['POST'])
+@app.route(REST_API_PERFORM_ACTION, methods=['POST'])
 def perform_action():
     try:
         data = request.get_json()

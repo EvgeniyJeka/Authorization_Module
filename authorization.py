@@ -1,15 +1,13 @@
 import jwt
 import time
 import logging
+
+from constants import *
 from sql_manager import SqlManager
 import hashlib
 import configparser
 
-sql_manager = SqlManager("./config.ini")
-
-# 1648743766.707471
-
-#token_ttl = 10000000
+sql_manager = SqlManager(CONFIG_FILE_PATH)
 
 
 class Authorization(object):
