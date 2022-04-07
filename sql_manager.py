@@ -100,6 +100,18 @@ class SqlManager(object):
 
         return result
 
+    def get_token_creation_time(self, jwt):
+        metadata = db.MetaData()
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.jwt_token == jwt)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+        if fetched_data:
+            return fetched_data[0][5]
+
+        return -1
+
     def save_jwt_key_time(self, username, encoded_jwt, key, token_creation_time):
 
         try:
@@ -167,5 +179,6 @@ class SqlManager(object):
 
 if __name__ == '__main__':
     manager = SqlManager("./config.ini")
-    a = manager.terminate_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.VgPvaawMbCuoq5hBkFhNfubq-mTm5dkR2FG1lEDDhOg3333")
-    print(a)
+    a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0." \
+        "hfrAiOrzNyFzgyawCnxYRKPHSByInZ2TqIZfDNblgdA"
+    print(manager.get_token_creation_time(a))
