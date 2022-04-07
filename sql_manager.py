@@ -26,6 +26,7 @@ class SqlManager(object):
         try:
             self.cursor, self.engine = self.connect_me(hst, usr, pwd, db_name)
             SetInitialData.set_initial_data(self.cursor, self.engine)
+            logging.info(f"SQL Manager: Connected to DB {db_name}")
 
         except TypeError:
             logging.critical("SQL DB - Failed to connect, please verify SQL DB container is running")

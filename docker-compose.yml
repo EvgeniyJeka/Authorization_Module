@@ -19,6 +19,17 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: sys
 
+  authorization_module:
+    image: authorization_module:latest
+    build: ./
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - cabin_db
+    networks:
+      - authorization_main
+
 
 
       
