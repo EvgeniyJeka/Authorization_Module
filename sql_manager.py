@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import sqlalchemy as db
 
+from constants import USERS_TABLE_NAME
 from set_initial_data import SetInitialData
 
 
@@ -25,6 +26,7 @@ class SqlManager(object):
         try:
             self.cursor, self.engine = self.connect_me(hst, usr, pwd, db_name)
             SetInitialData.set_initial_data(self.cursor, self.engine)
+            logging.info(f"SQL Manager: Connected to DB {db_name}")
 
         except TypeError:
             logging.critical("SQL DB - Failed to connect, please verify SQL DB container is running")
@@ -73,7 +75,7 @@ class SqlManager(object):
         result = set()
 
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_])
         ResultProxy = self.cursor.execute(query)
@@ -88,7 +90,7 @@ class SqlManager(object):
         result = set()
 
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_])
         ResultProxy = self.cursor.execute(query)
@@ -99,11 +101,23 @@ class SqlManager(object):
 
         return result
 
+    def get_token_creation_time(self, jwt):
+        metadata = db.MetaData()
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.jwt_token == jwt)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+        if fetched_data:
+            return fetched_data[0][5]
+
+        return -1
+
     def save_jwt_key_time(self, username, encoded_jwt, key, token_creation_time):
 
         try:
             metadata = db.MetaData()
-            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+            table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
             query = db.update(table_).\
                 values(jwt_token=encoded_jwt, key=key, token_creation_time=token_creation_time)\
@@ -119,7 +133,7 @@ class SqlManager(object):
     def terminate_token(self, token):
         try:
             metadata = db.MetaData()
-            table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+            table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
             query = db.update(table_).\
                 values(token_creation_time=0)\
@@ -135,7 +149,7 @@ class SqlManager(object):
 
     def get_password_by_username(self, username):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.username == username)
         ResultProxy = self.cursor.execute(query)
@@ -144,7 +158,7 @@ class SqlManager(object):
 
     def get_data_by_token(self, token):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.jwt_token == token)
         ResultProxy = self.cursor.execute(query)
@@ -154,7 +168,7 @@ class SqlManager(object):
 
     def get_allowed_actions_by_token(self, token):
         metadata = db.MetaData()
-        table_ = db.Table('users', metadata, autoload=True, autoload_with=self.engine)
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
 
         query = db.select([table_]).where(table_.columns.jwt_token == token)
         ResultProxy = self.cursor.execute(query)
@@ -166,5 +180,6 @@ class SqlManager(object):
 
 if __name__ == '__main__':
     manager = SqlManager("./config.ini")
-    a = manager.terminate_token("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.VgPvaawMbCuoq5hBkFhNfubq-mTm5dkR2FG1lEDDhOg3333")
-    print(a)
+    a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0." \
+        "hfrAiOrzNyFzgyawCnxYRKPHSByInZ2TqIZfDNblgdA"
+    print(manager.get_token_creation_time(a))

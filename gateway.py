@@ -2,6 +2,7 @@ from flask import request, Flask
 import logging
 
 from authorization import Authorization
+from constants import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,6 +19,8 @@ logging.basicConfig(level=logging.INFO)
 # Sign in method - verifies provided user credentials, generates JWT basing on random KEY
 # Generated JWT , the KEY and the exact time are saved in SQL DB.
 #
+# Sign out method - modifies the JWT creation time in SQL DB, sets it to 0 (the token expires)
+#
 # Perform Action methods - receives JWT and action type (ID).
 # Verifies the JWT exists in SQL DB.
 # Extracts the credentials from JWT, verifies them against DB (key is taken from the DB as well).
@@ -31,15 +34,14 @@ logging.basicConfig(level=logging.INFO)
 # "Wrong credentials" (JWT not in DB)
 # "Expired Token" (The token has expired)
 
-# Move hard-code to constants / config
 # Consider to add API method that would return JWT TTL
 
 
 app = Flask(__name__)
-authorization = Authorization("./config.ini")
+authorization = Authorization(CONFIG_FILE_PATH)
 
 
-@app.route('/authorization/sign_in', methods=['POST'])
+@app.route(REST_API_SIGN_IN, methods=['POST'])
 def sign_in():
     try:
         data = request.get_json()
@@ -54,14 +56,12 @@ def sign_in():
         elif 'error' in produced_token.keys():
             return {"Error": produced_token['error']}
 
-        return {"Authorization": "JWT will be provided here to end customer"}
-
     except (KeyError, TypeError) as e:
         logging.error(f"Sign In method called - credentials weren't provided: {e}")
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/sign_out', methods=['POST'])
+@app.route(REST_API_SIGN_OUT, methods=['POST'])
 def sign_out():
     try:
         data = request.get_json()
@@ -80,7 +80,7 @@ def sign_out():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/perform_action', methods=['POST'])
+@app.route(REST_API_PERFORM_ACTION, methods=['POST'])
 def perform_action():
     try:
         data = request.get_json()
@@ -102,6 +102,18 @@ def perform_action():
     except (KeyError, TypeError) as e:
         logging.error(f"Perform Action method called - missing: {e}")
         return {"Error": "Authorization: please provide valid action ID and JWT in request"}
+
+
+@app.route(REST_API_TOKEN_TTL, methods=['GET'])
+def get_token_ttl(jwt):
+    logging.info(f"Authorization: request for {jwt} token TTL received")
+
+    token_ttl_checked = authorization.jwt_token_ttl_remains(jwt)
+
+    if isinstance(token_ttl_checked, dict) and 'error' in token_ttl_checked.keys():
+        return {"Error": token_ttl_checked['error']}
+
+    return {f"JWT": f"{jwt}", "TTL": token_ttl_checked}
 
 
 if __name__ == '__main__':

@@ -1,15 +1,17 @@
 import jwt
 import time
 import logging
+from decimal import Decimal
+
+logging.basicConfig(level=logging.INFO)
+
+from constants import *
 from sql_manager import SqlManager
 import hashlib
 import configparser
+import random
 
-sql_manager = SqlManager("./config.ini")
-
-# 1648743766.707471
-
-#token_ttl = 10000000
+sql_manager = SqlManager(CONFIG_FILE_PATH)
 
 
 class Authorization(object):
@@ -38,6 +40,9 @@ class Authorization(object):
 
         return sql_manager.terminate_token(token)
 
+    def key_gen(self):
+        return "key" + str(random.randint(1000, 10000))
+
     def generate_token(self, username: str, password: str):
         """
         This method is used to generate a JWT basing on provided credentials. JWT is generated after creds are verified
@@ -46,7 +51,7 @@ class Authorization(object):
         :return: JWT on success
         """
 
-        key = "tempKey"  # The key will be generated on random basis and saved to DB
+        key = self.key_gen()  # The key will be generated on random basis and saved to DB
 
         # Check if given username exists in SQL DB, if it doesn't - return an error
         if not sql_manager.get_users().__contains__(username):
@@ -115,12 +120,22 @@ class Authorization(object):
             logging.error(f"Authorization: Invalid JWT received {token}")
             return {"error": "Invalid token provided"}
 
+    def jwt_token_ttl_remains(self, token):
+        creation_time = sql_manager.get_token_creation_time(token)
+
+        if float(creation_time) > 0:
+            logging.info(f"Authorization: token {token} creation time: {creation_time}")
+            ttl = self.token_ttl - (time.time() - float(creation_time))
+            if ttl > 0:
+                return ttl
+            return 0
+        return {"error": "Non existing JWT"}
 
 
 if __name__ == '__main__':
     mod = Authorization("./config.ini")
-    cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.VgPvaawMbCuoq5hBkFhNfubq-mTm5dkR2FG1lEDDhOg3"
-    a = mod.sign_out(cc)
+    cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.FxahvPy_1CstFENbK3-5Ara55hCV5cRSASriAK1UvQ4"
+    a = mod.jwt_token_ttl_remains(cc)
     print(a)
 
 
