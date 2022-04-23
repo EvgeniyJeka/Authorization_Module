@@ -96,7 +96,7 @@ class Authorization(object):
         # Bring the action types of all actions that current user is allowed to perform from SQL.
         # If the action types list contains the provided action type - return a confirmation.
         # Otherwise - return an error message.
-        if action_id not in sql_manager.get_allowed_actions_by_token(token):
+        if int(action_id) not in sql_manager.get_allowed_actions_by_token(token):
             return {"error": "Forbidden action"}
 
         return {"Confirmed": "Permissions verified"}
