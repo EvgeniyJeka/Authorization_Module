@@ -2,7 +2,6 @@ from flask import request, Flask
 import logging
 
 from authorization import Authorization
-from constants import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,8 +18,6 @@ logging.basicConfig(level=logging.INFO)
 # Sign in method - verifies provided user credentials, generates JWT basing on random KEY
 # Generated JWT , the KEY and the exact time are saved in SQL DB.
 #
-# Sign out method - modifies the JWT creation time in SQL DB, sets it to 0 (the token expires)
-#
 # Perform Action methods - receives JWT and action type (ID).
 # Verifies the JWT exists in SQL DB.
 # Extracts the credentials from JWT, verifies them against DB (key is taken from the DB as well).
@@ -34,18 +31,25 @@ logging.basicConfig(level=logging.INFO)
 # "Wrong credentials" (JWT not in DB)
 # "Expired Token" (The token has expired)
 
+# Move hard-code to constants / config
 # Consider to add API method that would return JWT TTL
 
 
 app = Flask(__name__)
-authorization = Authorization(CONFIG_FILE_PATH)
+authorization = Authorization("./config.ini")
 
 
-@app.route(REST_API_SIGN_IN, methods=['POST'])
+@app.route('/authorization/sign_in', methods=['POST'])
 def sign_in():
     try:
-        data = request.get_json()
-        username, password = data['username'], data['password']
+        # Headers parsing
+        username = request.headers.get('username')
+        password = request.headers.get('password')
+
+        if not (username and password):
+            logging.warning("Credentials missing in request headers")
+            return {"Authorization": "Credentials missing in request headers"}
+
         logging.info(f"Authorization: Sign In request received, username {username} password {password}")
 
         produced_token = authorization.generate_token(username, password)
@@ -61,11 +65,16 @@ def sign_in():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route(REST_API_SIGN_OUT, methods=['POST'])
+@app.route('/authorization/sign_out', methods=['POST'])
 def sign_out():
     try:
-        data = request.get_json()
-        token = data['token']
+        # Headers parsing
+        token = request.headers.get('jwt')
+
+        if not token:
+            logging.warning("Credentials missing in request headers")
+            return {"Authorization": "Credentials missing in request headers"}
+
         logging.info(f"Authorization: Sign Out request received, JWT in request: {token}")
 
         sign_out_performed = authorization.sign_out(token)
@@ -80,11 +89,17 @@ def sign_out():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route(REST_API_PERFORM_ACTION, methods=['POST'])
+@app.route('/authorization/perform_action', methods=['POST'])
 def perform_action():
     try:
-        data = request.get_json()
-        auth_token, action_id = data['auth_token'], data['action_id']
+        # Headers parsing
+        auth_token = request.headers.get('jwt')
+        action_id = request.headers.get('action_id')
+
+        if not (auth_token and action_id):
+            logging.warning("JWT or Action ID missing in request headers")
+            return {"Authorization": "JWT or Action ID missing in request headers"}
+
         logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
                      f"addressing the Authorization module")
 
@@ -102,18 +117,6 @@ def perform_action():
     except (KeyError, TypeError) as e:
         logging.error(f"Perform Action method called - missing: {e}")
         return {"Error": "Authorization: please provide valid action ID and JWT in request"}
-
-
-@app.route(REST_API_TOKEN_TTL, methods=['GET'])
-def get_token_ttl(jwt):
-    logging.info(f"Authorization: request for {jwt} token TTL received")
-
-    token_ttl_checked = authorization.jwt_token_ttl_remains(jwt)
-
-    if isinstance(token_ttl_checked, dict) and 'error' in token_ttl_checked.keys():
-        return {"Error": token_ttl_checked['error']}
-
-    return {f"JWT": f"{jwt}", "TTL": token_ttl_checked}
 
 
 if __name__ == '__main__':
