@@ -7,8 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import sqlalchemy as db
 
-from constants import USERS_TABLE_NAME
-from set_initial_data import SetInitialData
+import objects_mapped_
+from sqlalchemy.orm import sessionmaker
+
+
+from constants import USERS_TABLE_NAME, ROLES_TABLE_NAME, ACTIONS_TABLE_NAME, ACTIONS_BY_ROLES_TABLE_NAME
+from tools import Tools
 
 
 class SqlManager(object):
@@ -24,12 +28,13 @@ class SqlManager(object):
         db_name = config.get("SQL_DB", "db_name")
 
         try:
-            self.cursor, self.engine = self.connect_me(hst, usr, pwd, db_name)
-            SetInitialData.set_initial_data(self.cursor, self.engine)
+            self.cursor = self.connect_me(hst, usr, pwd, db_name)
+
             logging.info(f"SQL Manager: Connected to DB {db_name}")
 
-        except TypeError:
-            logging.critical("SQL DB - Failed to connect, please verify SQL DB container is running")
+        except TypeError as e:
+            logging.critical(f"SQL DB - Failed to connect, please verify SQL DB container is running - {e}")
+            raise e
 
     # Connect to DB
     def connect_me(self, hst, usr, pwd, db_name):
@@ -50,16 +55,23 @@ class SqlManager(object):
 
             # Create an engine object.
             engine = create_engine(url, echo=False)
+            self.engine = engine
 
             # Create database if it does not exist.
             if not database_exists(engine.url):
                 create_database(engine.url)
                 cursor = engine.connect()
-                return cursor, engine
+
+                # Initiating a session
+                Session = sessionmaker(bind=self.engine)
+                self.session = Session()
+                self.set_initial_data()
+
+                return cursor
             else:
                 # Connect the database if exists.
                 cursor = engine.connect()
-                return cursor, engine
+                return cursor
 
         # Wrong Credentials error
         except sqlalchemy.exc.OperationalError as e:
@@ -68,8 +80,82 @@ class SqlManager(object):
 
         # General error
         except Exception as e:
-            logging.critical("SQL DB - Failed to connect, reason is unclear")
+            logging.critical(f"SQL DB - Failed to connect, reason is unclear - {e}")
             logging.critical(e)
+
+    def set_initial_data(self):
+
+        tables = self.engine.table_names()
+
+        # Creating the 'users' table if it doesn't exist.
+        if USERS_TABLE_NAME not in tables:
+            logging.info(f"{USERS_TABLE_NAME} table is missing! Creating the {USERS_TABLE_NAME} table")
+            objects_mapped_.Base.metadata.create_all(self.engine)
+
+            # Inserting the default test users
+            default_users = [objects_mapped_.UsersMapped(id='101',
+                                                         username='Greg Bradly',
+                                                         password=Tools.hash_string("Pigs"),
+                                                         jwt_token="",
+                                                         key="",
+                                                         token_creation_time="",
+                                                         allowed_actions="1 2"),
+                             objects_mapped_.UsersMapped(id='202',
+                                                         username='Joe Anderson',
+                                                         password=Tools.hash_string("Truth"),
+                                                         jwt_token="",
+                                                         key="",
+                                                         token_creation_time="",
+                                                         allowed_actions="1 3"),
+                             objects_mapped_.UsersMapped(id='304',
+                                                         username='Andrew Levi',
+                                                         password=Tools.hash_string("Pass"),
+                                                         jwt_token="",
+                                                         key="",
+                                                         token_creation_time="",
+                                                         allowed_actions="1 2"),
+                             objects_mapped_.UsersMapped(id='103',
+                                                         username='Mary Poppins',
+                                                         password=Tools.hash_string("Journey"),
+                                                         jwt_token="",
+                                                         key="",
+                                                         token_creation_time="",
+                                                         allowed_actions="1 3"),
+                             ]
+
+            self.session.add_all(default_users)
+            self.session.commit()
+
+        if ROLES_TABLE_NAME not in tables:
+            logging.info(f"{ROLES_TABLE_NAME} table is missing! Creating the {ROLES_TABLE_NAME} table")
+
+            default_roles = [objects_mapped_.RolesMapped(role_id=1, role="Borrower"),
+                             objects_mapped_.RolesMapped(role_id=2, role="Lender"),
+                             objects_mapped_.RolesMapped(role_id=3, role="Admin")]
+
+            self.session.add_all(default_roles)
+            self.session.commit()
+
+        if ACTIONS_TABLE_NAME not in tables:
+            logging.info(f"{ACTIONS_TABLE_NAME} table is missing! Creating the {ACTIONS_TABLE_NAME} table")
+
+            default_actions = [objects_mapped_.ActionsMapped(action_id=1, action="place bid"),
+                               objects_mapped_.ActionsMapped(action_id=2, action="place offer"),
+                               objects_mapped_.ActionsMapped(action_id=3, action="cancel bid"),
+                               objects_mapped_.ActionsMapped(action_id=4, action="cancel offer")]
+
+            self.session.add_all(default_actions)
+            self.session.commit()
+
+        if ACTIONS_BY_ROLES_TABLE_NAME not in tables:
+            logging.info(f"{ACTIONS_BY_ROLES_TABLE_NAME} table is missing! Creating the {ACTIONS_BY_ROLES_TABLE_NAME} table")
+
+            actions_mapping = [objects_mapped_.ActionsToRolesMapped(role_id=1, allowed_actions_id='2 4'),
+                               objects_mapped_.ActionsToRolesMapped(role_id=2, allowed_actions_id='1 3'),
+                               objects_mapped_.ActionsToRolesMapped(role_id=3, allowed_actions_id='1 2 3 4')]
+
+            self.session.add_all(actions_mapping)
+            self.session.commit()
 
     def get_users(self)-> set:
         result = set()
@@ -178,8 +264,8 @@ class SqlManager(object):
 # DB TABLE should contain the following rows: user ID, username, password (hashed),
 # JWT generation key, JWT generation time
 
-if __name__ == '__main__':
-    manager = SqlManager("./config.ini")
-    a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0." \
-        "hfrAiOrzNyFzgyawCnxYRKPHSByInZ2TqIZfDNblgdA"
-    print(manager.get_token_creation_time(a))
+# if __name__ == '__main__':
+#     manager = SqlManager("./config.ini")
+#     # a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0." \
+#     #     "hfrAiOrzNyFzgyawCnxYRKPHSByInZ2TqIZfDNblgdA"
+#     # print(manager.get_token_creation_time(a))

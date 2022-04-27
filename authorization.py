@@ -132,11 +132,11 @@ class Authorization(object):
         return {"error": "Non existing JWT"}
 
 
-if __name__ == '__main__':
-    mod = Authorization("./config.ini")
-    cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.FxahvPy_1CstFENbK3-5Ara55hCV5cRSASriAK1UvQ4"
-    a = mod.jwt_token_ttl_remains(cc)
-    print(a)
+# if __name__ == '__main__':
+#     mod = Authorization("./config.ini")
+#     cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.FxahvPy_1CstFENbK3-5Ara55hCV5cRSASriAK1UvQ4"
+#     a = mod.jwt_token_ttl_remains(cc)
+#     print(a)
 
 
 

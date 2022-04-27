@@ -4,3 +4,6 @@ REST_API_SIGN_OUT = '/authorization/sign_out'
 REST_API_PERFORM_ACTION = '/authorization/perform_action'
 REST_API_TOKEN_TTL = "/authorization/get_jwt_ttl/<jwt>"
 USERS_TABLE_NAME = 'users'
+ROLES_TABLE_NAME = 'roles'
+ACTIONS_TABLE_NAME = 'actions'
+ACTIONS_BY_ROLES_TABLE_NAME = 'actions_by_roles'
