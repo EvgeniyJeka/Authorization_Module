@@ -38,7 +38,7 @@ class ActionsMapped(Base):
 
 
 class ActionsToRolesMapped(Base):
-    __tablename__ = 'actions_to_roles'
+    __tablename__ = 'actions_by_roles'
 
     role_id = Column('role_id', db.BIGINT, primary_key=True)
     allowed_actions_id = Column('allowed_actions_id', db.String(255))

@@ -18,6 +18,8 @@ class Authorization(object):
 
     def __init__(self, config_file_path):
 
+        logging.critical("Creating ONE Authorization instance!!")
+
         # Reading DB name, host and credentials from config
         config = configparser.ConfigParser()
         config.read(config_file_path)
@@ -134,9 +136,9 @@ class Authorization(object):
 
 # if __name__ == '__main__':
 #     mod = Authorization("./config.ini")
-#     cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.FxahvPy_1CstFENbK3-5Ara55hCV5cRSASriAK1UvQ4"
-#     a = mod.jwt_token_ttl_remains(cc)
-#     print(a)
+    # cc = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.FxahvPy_1CstFENbK3-5Ara55hCV5cRSASriAK1UvQ4"
+    # a = mod.jwt_token_ttl_remains(cc)
+    # print(a)
 
 
 

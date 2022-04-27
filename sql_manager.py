@@ -19,6 +19,8 @@ class SqlManager(object):
 
     def __init__(self, config_file_path):
 
+        logging.critical("Creating ONE SqlManager instance!!")
+
         # Reading DB name, host and credentials from config
         config = configparser.ConfigParser()
         config.read(config_file_path)
@@ -28,7 +30,12 @@ class SqlManager(object):
         db_name = config.get("SQL_DB", "db_name")
 
         try:
-            self.cursor = self.connect_me(hst, usr, pwd, db_name)
+            self.cursor, self.engine = self.connect_me(hst, usr, pwd, db_name)
+
+            # Initiating a session
+            Session = sessionmaker(bind=self.engine)
+            self.session = Session()
+            self.set_initial_data()
 
             logging.info(f"SQL Manager: Connected to DB {db_name}")
 
@@ -62,16 +69,11 @@ class SqlManager(object):
                 create_database(engine.url)
                 cursor = engine.connect()
 
-                # Initiating a session
-                Session = sessionmaker(bind=self.engine)
-                self.session = Session()
-                self.set_initial_data()
-
-                return cursor
+                return cursor, engine
             else:
                 # Connect the database if exists.
                 cursor = engine.connect()
-                return cursor
+                return cursor, engine
 
         # Wrong Credentials error
         except sqlalchemy.exc.OperationalError as e:

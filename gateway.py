@@ -34,8 +34,8 @@ logging.basicConfig(level=logging.INFO)
 # Move hard-code to constants / config
 # Consider to add API method that would return JWT TTL
 
-
 app = Flask(__name__)
+
 authorization = Authorization("./config.ini")
 
 
@@ -120,4 +120,5 @@ def perform_action():
 
 
 if __name__ == '__main__':
+    print("Test")
     app.run(debug=True, host='0.0.0.0')
