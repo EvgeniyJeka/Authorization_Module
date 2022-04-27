@@ -118,7 +118,179 @@ def perform_action():
         logging.error(f"Perform Action method called - missing: {e}")
         return {"Error": "Authorization: please provide valid action ID and JWT in request"}
 
+@app.route("/place_offer", methods=['POST'])
+def place_offer():
+    """
+    This API method can be used to place new offers.
+    Offer is placed only if it passes validation.
+    Expecting for a POST request with JSON body, example:
+    {
+    "type":"offer",
+    "owner_id":1200,
+    "sum":110000,
+    "duration":12,
+    "offered_interest":0.09,
+    "allow_partial_fill":0
+    }
+    """
+    offer = request.get_json()
+    logging.info(f"Gateway: Offer received: {offer}")
+    action_id = 2 # Place Offer
+
+    auth_token = request.headers.get('jwt')
+
+    if not auth_token:
+        logging.warning("JWT is missing in request headers")
+        return {"Authorization": "JWT is missing in request headers"}
+
+    logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
+                 f"addressing the Authorization module")
+
+    if auth_token == "":
+        return {"error": f"Wrong credentials"}
+
+    permissions_verification_result = authorization.verify_token(auth_token, action_id)
+
+    if 'error' in permissions_verification_result.keys():
+        return {"Error": permissions_verification_result['error']}
+
+
+    return {"result": f"Action {action_id} was successfully performed"}
+
+    # next_id = uuid.uuid4().int & (1 << ConfigParams.generated_uuid_length.value)-1
+    #
+    # logging.info("Validating offer placement request")
+    # response = reporter.validate_offer(offer, ConfigParams.verified_offer_params.value)
+    #
+    # if 'error' in response.keys():
+    #     logging.warning(f"Offer {next_id} has failed validation and was rejected")
+    #     return response
+    #
+    # # In future versions it is possible that the offer will be converted to Google Proto message
+    # placed_offer = Offer.Offer(next_id, offer['owner_id'], offer['sum'], offer['duration'], offer['offered_interest'],
+    #                      offer['allow_partial_fill'])
+    #
+    # # Offer - serializing to proto
+    # offer_to_producer = proto_handler.serialize_offer_to_proto(placed_offer)
+    #
+    # # Handling invalid user input -  provided data can't be used to create a valid Bid and serialize it to proto
+    # if not offer_to_producer:
+    #     return {"error": f"Failed to place a new offer, invalid data in request"}
+    #
+    # offer_record_headers = [("type", bytes('offer', encoding='utf8'))]
+    #
+    # logging.info(f"Using Producer instance to send the offer to Kafka topic 'offers': {offer_to_producer} ")
+    # producer.produce_message(offer_to_producer, 'offers', offer_record_headers)
+    #
+    # return {"result": f"Added new offer, ID {next_id} assigned", "offer_id": next_id}
+
+@app.route("/place_bid", methods=['POST'])
+def place_bid():
+    """
+    This API method can be used to place new bids on existing offer.
+    Bid is placed only if it passes validation.
+    Expecting for a POST request with JSON body, example:
+    {
+    "type":"bid",
+    "owner_id":"2032",
+    "bid_interest":0.061,
+    "target_offer_id":2,
+    "partial_only":0
+    }
+    """
+    bid = request.get_json()
+    logging.info(f"Gateway: Bid received {bid}")
+
+    action_id = 1  # Place Bid
+
+    auth_token = request.headers.get('jwt')
+
+    if not auth_token:
+        logging.warning("JWT is missing in request headers")
+        return {"Authorization": "JWT is missing in request headers"}
+
+    logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
+                 f"addressing the Authorization module")
+
+    if auth_token == "":
+        return {"error": f"Wrong credentials"}
+
+    permissions_verification_result = authorization.verify_token(auth_token, action_id)
+
+    if 'error' in permissions_verification_result.keys():
+        return {"Error": permissions_verification_result['error']}
+
+    return {"result": f"Action {action_id} was successfully performed"}
+
+    # next_id = uuid.uuid4().int & (1 << ConfigParams.generated_uuid_length.value)-1
+    #
+    # logging.info("Validating target offer with provided ID is OPEN, validating Bid interest against target offer")
+    # response = reporter.validate_bid(bid, ConfigParams.verified_bid_params.value)
+    #
+    # if 'error' in response.keys():
+    #     logging.warning(f"Bid {next_id} has failed validation and was rejected")
+    #     return response
+    #
+    # if bid['partial_only'] == 1:
+    #     placed_bid = Bid.Bid(next_id, bid['owner_id'], bid['bid_interest'],
+    #                          bid['target_offer_id'], bid['partial_only'], bid['partial_sum'])
+    #
+    # else:
+    #     placed_bid = Bid.Bid(next_id, bid['owner_id'], bid['bid_interest'], bid['target_offer_id'], bid['partial_only'])
+    #
+    # # Bid - serializing to proto
+    # bid_to_producer = proto_handler.serialize_bid_to_proto(placed_bid)
+    #
+    # # Handling invalid user input -  provided data can't be used to create a valid Bid and serialize it to proto
+    # if not bid_to_producer:
+    #     return {"error": f"Failed to place a new bid, invalid data in request"}
+    #
+    # bid_record_headers = [("type", bytes('bid', encoding='utf8'))]
+    #
+    # logging.info(f"Using Producer instance to send the bid to Kafka topic 'bids': {bid_to_producer} ")
+    # producer.produce_message(bid_to_producer, 'bids', bid_record_headers)
+    #
+    # return {"result": f"Added new bid, ID {next_id} assigned", "bid_id": next_id}
+
+
+@app.route("/get_all_my_bids", methods=['POST'])
+def get_my_bids():
+    """
+    This API method can be used to get all bids placed by customer with provided customer ID.
+    :return: JSON
+    Body sample:
+    {
+    "owner_id":"1032",
+    "token": "a#rf$1vc"
+    }
+    """
+    action_id = 5  # View private bids
+    auth_token = request.headers.get('jwt')
+
+    if not auth_token:
+        logging.warning("JWT is missing in request headers")
+        return {"Authorization": "JWT is missing in request headers"}
+
+    logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
+                 f"addressing the Authorization module")
+
+    if auth_token == "":
+        return {"error": f"Wrong credentials"}
+
+    permissions_verification_result = authorization.verify_token(auth_token, action_id)
+
+    if 'error' in permissions_verification_result.keys():
+        return {"Error": permissions_verification_result['error']}
+
+    lender_id = authorization.get_user_data_by_jwt(auth_token)
+
+    return {"result": f"Action {action_id} was successfully performed"}
+
+
+    # logging.info(f"Gateway: get all my bids, lender token validated: {token}")
+    # return simplejson.dumps(reporter.get_bids_by_lender(lender_id))
+
+
 
 if __name__ == '__main__':
-    print("Test")
     app.run(debug=True, host='0.0.0.0')

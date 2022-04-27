@@ -151,7 +151,10 @@ class SqlManager(object):
             default_actions = [objects_mapped_.ActionsMapped(action_id=1, action="place bid"),
                                objects_mapped_.ActionsMapped(action_id=2, action="place offer"),
                                objects_mapped_.ActionsMapped(action_id=3, action="cancel bid"),
-                               objects_mapped_.ActionsMapped(action_id=4, action="cancel offer")]
+                               objects_mapped_.ActionsMapped(action_id=4, action="cancel offer"),
+                               objects_mapped_.ActionsMapped(action_id=5, action="view private bids"),
+                               objects_mapped_.ActionsMapped(action_id=6, action="view private offers"),
+                               objects_mapped_.ActionsMapped(action_id=7, action="view private matches")]
 
             self.session.add_all(default_actions)
             self.session.commit()
@@ -159,9 +162,9 @@ class SqlManager(object):
         if ACTIONS_BY_ROLES_TABLE_NAME not in tables:
             logging.info(f"{ACTIONS_BY_ROLES_TABLE_NAME} table is missing! Creating the {ACTIONS_BY_ROLES_TABLE_NAME} table")
 
-            actions_mapping = [objects_mapped_.ActionsToRolesMapped(role_id=1, allowed_actions_id='2 4'),
-                               objects_mapped_.ActionsToRolesMapped(role_id=2, allowed_actions_id='1 3'),
-                               objects_mapped_.ActionsToRolesMapped(role_id=3, allowed_actions_id='1 2 3 4')]
+            actions_mapping = [objects_mapped_.ActionsToRolesMapped(role_id=1, allowed_actions_id='2 4 6 7'),
+                               objects_mapped_.ActionsToRolesMapped(role_id=2, allowed_actions_id='1 3 5 7'),
+                               objects_mapped_.ActionsToRolesMapped(role_id=3, allowed_actions_id='1 2 3 4 5 6 7')]
 
             self.session.add_all(actions_mapping)
             self.session.commit()
@@ -279,12 +282,22 @@ class SqlManager(object):
 
         return [int(x) for x in fetched_data[0][1].split(" ")]
 
+    def get_user_by_token(self, token):
+        metadata = db.MetaData()
+        table_ = db.Table(USERS_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.jwt_token == token)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+
+        return fetched_data[0]
+
 
 
 # DB TABLE should contain the following rows: user ID, username, password (hashed),
 # JWT generation key, JWT generation time
 
-# if __name__ == '__main__':
-#     manager = SqlManager("./config.ini")
-#     a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.OqC_IGMKtMaCmqq8BlVNsAczwAnm608XsYwbft-LDOg"
-#     print(manager.get_allowed_actions_by_token(a))
+if __name__ == '__main__':
+    manager = SqlManager("./config.ini")
+    a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.xT8nJ0NivcD09UhLd-BVES5nMt87wtVpdkJt30aRF_g"
+    print(manager.get_user_by_token(a))

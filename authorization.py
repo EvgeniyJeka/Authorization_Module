@@ -133,6 +133,9 @@ class Authorization(object):
             return 0
         return {"error": "Non existing JWT"}
 
+    def get_user_data_by_jwt(self, jwt):
+        return sql_manager.get_user_by_token(jwt)
+
 
 # if __name__ == '__main__':
 #     mod = Authorization("./config.ini")
