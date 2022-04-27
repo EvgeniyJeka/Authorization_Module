@@ -101,28 +101,35 @@ class SqlManager(object):
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
-                                                         allowed_actions="1 2"),
+                                                         role_id=1),
                              objects_mapped_.UsersMapped(id='202',
                                                          username='Joe Anderson',
                                                          password=Tools.hash_string("Truth"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
-                                                         allowed_actions="1 3"),
+                                                         role_id=2),
                              objects_mapped_.UsersMapped(id='304',
                                                          username='Andrew Levi',
                                                          password=Tools.hash_string("Pass"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
-                                                         allowed_actions="1 2"),
+                                                         role_id=1),
                              objects_mapped_.UsersMapped(id='103',
                                                          username='Mary Poppins',
                                                          password=Tools.hash_string("Journey"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
-                                                         allowed_actions="1 3"),
+                                                         role_id=2),
+                             objects_mapped_.UsersMapped(id='505',
+                                                         username='David Ben Gution',
+                                                         password=Tools.hash_string("Rabbit"),
+                                                         jwt_token="",
+                                                         key="",
+                                                         token_creation_time="",
+                                                         role_id=3),
                              ]
 
             self.session.add_all(default_users)
@@ -261,13 +268,23 @@ class SqlManager(object):
         query = db.select([table_]).where(table_.columns.jwt_token == token)
         ResultProxy = self.cursor.execute(query)
         fetched_data = ResultProxy.fetchall()
-        return [int(x) for x in fetched_data[0][6].split(" ")]
+
+        role_id = int(fetched_data[0][6])
+
+        table_ = db.Table(ACTIONS_BY_ROLES_TABLE_NAME, metadata, autoload=True, autoload_with=self.engine)
+
+        query = db.select([table_]).where(table_.columns.role_id == role_id)
+        ResultProxy = self.cursor.execute(query)
+        fetched_data = ResultProxy.fetchall()
+
+        return [int(x) for x in fetched_data[0][1].split(" ")]
+
+
 
 # DB TABLE should contain the following rows: user ID, username, password (hashed),
 # JWT generation key, JWT generation time
 
 # if __name__ == '__main__':
 #     manager = SqlManager("./config.ini")
-#     # a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0." \
-#     #     "hfrAiOrzNyFzgyawCnxYRKPHSByInZ2TqIZfDNblgdA"
-#     # print(manager.get_token_creation_time(a))
+#     a = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiTWFyeSBQb3BwaW5zIiwicGFzc3dvcmQiOiJKb3VybmV5In0.OqC_IGMKtMaCmqq8BlVNsAczwAnm608XsYwbft-LDOg"
+#     print(manager.get_allowed_actions_by_token(a))

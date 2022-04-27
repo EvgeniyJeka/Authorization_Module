@@ -20,7 +20,8 @@ class UsersMapped(Base):
     key = Column('key', db.String(255))
     token_creation_time = Column('token_creation_time', db.String(255))
 
-    allowed_actions = Column('allowed_actions', db.String(255))
+    #allowed_actions = Column('allowed_actions', db.String(255))
+    role_id = Column('role_id', db.String(255))
 
 
 class RolesMapped(Base):
