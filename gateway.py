@@ -118,6 +118,17 @@ def perform_action():
         logging.error(f"Perform Action method called - missing: {e}")
         return {"Error": "Authorization: please provide valid action ID and JWT in request"}
 
+@app.route(REST_API_TOKEN_TTL, methods=['GET'])
+def get_token_ttl(jwt):
+    logging.info(f"Authorization: request for {jwt} token TTL received")
+
+    token_ttl_checked = authorization.jwt_token_ttl_remains(jwt)
+
+    if isinstance(token_ttl_checked, dict) and 'error' in token_ttl_checked.keys():
+        return {"Error": token_ttl_checked['error']}
+
+    return {f"JWT": f"{jwt}", "TTL": token_ttl_checked}
+
 @app.route("/place_offer", methods=['POST'])
 def place_offer():
     """
