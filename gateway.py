@@ -118,7 +118,8 @@ def perform_action():
         logging.error(f"Perform Action method called - missing: {e}")
         return {"Error": "Authorization: please provide valid action ID and JWT in request"}
 
-@app.route(REST_API_TOKEN_TTL, methods=['GET'])
+
+@app.route("/get_jwt_ttl/<jwt>", methods=['GET'])
 def get_token_ttl(jwt):
     logging.info(f"Authorization: request for {jwt} token TTL received")
 
@@ -128,6 +129,7 @@ def get_token_ttl(jwt):
         return {"Error": token_ttl_checked['error']}
 
     return {f"JWT": f"{jwt}", "TTL": token_ttl_checked}
+
 
 @app.route("/place_offer", methods=['POST'])
 def place_offer():
@@ -359,6 +361,8 @@ def get_my_matches():
 
     # logging.info(f"Gateway: get all my matches, customer's token validated: {token}")
     # return simplejson.dumps(reporter.get_matches_by_owner(owner_id))
+
+    return {"result": f"Action {action_id} was successfully performed"}
 
 
 

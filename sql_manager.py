@@ -7,12 +7,11 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import sqlalchemy as db
 
-import objects_mapped_
+from credittomodels import objects_mapped, utils
 from sqlalchemy.orm import sessionmaker
 
-
 from constants import USERS_TABLE_NAME, ROLES_TABLE_NAME, ACTIONS_TABLE_NAME, ACTIONS_BY_ROLES_TABLE_NAME
-from tools import Tools
+
 
 
 class SqlManager(object):
@@ -92,40 +91,40 @@ class SqlManager(object):
         # Creating the 'users' table if it doesn't exist.
         if USERS_TABLE_NAME not in tables:
             logging.info(f"{USERS_TABLE_NAME} table is missing! Creating the {USERS_TABLE_NAME} table")
-            objects_mapped_.Base.metadata.create_all(self.engine)
+            objects_mapped.Base.metadata.create_all(self.engine)
 
             # Inserting the default test users
-            default_users = [objects_mapped_.UsersMapped(id='101',
+            default_users = [objects_mapped.UsersMapped(id='101',
                                                          username='Greg Bradly',
-                                                         password=Tools.hash_string("Pigs"),
+                                                         password=utils.Calculator.hash_string("Pigs"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
                                                          role_id=1),
-                             objects_mapped_.UsersMapped(id='202',
+                             objects_mapped.UsersMapped(id='202',
                                                          username='Joe Anderson',
-                                                         password=Tools.hash_string("Truth"),
+                                                         password=utils.Calculator.hash_string("Truth"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
                                                          role_id=2),
-                             objects_mapped_.UsersMapped(id='304',
+                             objects_mapped.UsersMapped(id='304',
                                                          username='Andrew Levi',
-                                                         password=Tools.hash_string("Pass"),
+                                                         password=utils.Calculator.hash_string("Pass"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
                                                          role_id=1),
-                             objects_mapped_.UsersMapped(id='103',
+                             objects_mapped.UsersMapped(id='103',
                                                          username='Mary Poppins',
-                                                         password=Tools.hash_string("Journey"),
+                                                         password=utils.Calculator.hash_string("Journey"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
                                                          role_id=2),
-                             objects_mapped_.UsersMapped(id='505',
+                             objects_mapped.UsersMapped(id='505',
                                                          username='David Ben Gution',
-                                                         password=Tools.hash_string("Rabbit"),
+                                                         password=utils.Calculator.hash_string("Rabbit"),
                                                          jwt_token="",
                                                          key="",
                                                          token_creation_time="",
@@ -138,9 +137,9 @@ class SqlManager(object):
         if ROLES_TABLE_NAME not in tables:
             logging.info(f"{ROLES_TABLE_NAME} table is missing! Creating the {ROLES_TABLE_NAME} table")
 
-            default_roles = [objects_mapped_.RolesMapped(role_id=1, role="Borrower"),
-                             objects_mapped_.RolesMapped(role_id=2, role="Lender"),
-                             objects_mapped_.RolesMapped(role_id=3, role="Admin")]
+            default_roles = [objects_mapped.RolesMapped(role_id=1, role="Borrower"),
+                             objects_mapped.RolesMapped(role_id=2, role="Lender"),
+                             objects_mapped.RolesMapped(role_id=3, role="Admin")]
 
             self.session.add_all(default_roles)
             self.session.commit()
@@ -148,13 +147,13 @@ class SqlManager(object):
         if ACTIONS_TABLE_NAME not in tables:
             logging.info(f"{ACTIONS_TABLE_NAME} table is missing! Creating the {ACTIONS_TABLE_NAME} table")
 
-            default_actions = [objects_mapped_.ActionsMapped(action_id=1, action="place bid"),
-                               objects_mapped_.ActionsMapped(action_id=2, action="place offer"),
-                               objects_mapped_.ActionsMapped(action_id=3, action="cancel bid"),
-                               objects_mapped_.ActionsMapped(action_id=4, action="cancel offer"),
-                               objects_mapped_.ActionsMapped(action_id=5, action="view private bids"),
-                               objects_mapped_.ActionsMapped(action_id=6, action="view private offers"),
-                               objects_mapped_.ActionsMapped(action_id=7, action="view private matches")]
+            default_actions = [objects_mapped.ActionsMapped(action_id=1, action="place bid"),
+                               objects_mapped.ActionsMapped(action_id=2, action="place offer"),
+                               objects_mapped.ActionsMapped(action_id=3, action="cancel bid"),
+                               objects_mapped.ActionsMapped(action_id=4, action="cancel offer"),
+                               objects_mapped.ActionsMapped(action_id=5, action="view private bids"),
+                               objects_mapped.ActionsMapped(action_id=6, action="view private offers"),
+                               objects_mapped.ActionsMapped(action_id=7, action="view private matches")]
 
             self.session.add_all(default_actions)
             self.session.commit()
@@ -162,9 +161,9 @@ class SqlManager(object):
         if ACTIONS_BY_ROLES_TABLE_NAME not in tables:
             logging.info(f"{ACTIONS_BY_ROLES_TABLE_NAME} table is missing! Creating the {ACTIONS_BY_ROLES_TABLE_NAME} table")
 
-            actions_mapping = [objects_mapped_.ActionsToRolesMapped(role_id=1, allowed_actions_id='2 4 6 7'),
-                               objects_mapped_.ActionsToRolesMapped(role_id=2, allowed_actions_id='1 3 5 7'),
-                               objects_mapped_.ActionsToRolesMapped(role_id=3, allowed_actions_id='1 2 3 4 5 6 7')]
+            actions_mapping = [objects_mapped.ActionsToRolesMapped(role_id=1, allowed_actions_id='2 4 6 7'),
+                               objects_mapped.ActionsToRolesMapped(role_id=2, allowed_actions_id='1 3 5 7'),
+                               objects_mapped.ActionsToRolesMapped(role_id=3, allowed_actions_id='1 2 3 4 5 6 7')]
 
             self.session.add_all(actions_mapping)
             self.session.commit()
