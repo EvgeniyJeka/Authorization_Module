@@ -39,7 +39,7 @@ app = Flask(__name__)
 authorization = Authorization("./config.ini")
 
 
-@app.route('/authorization/sign_in', methods=['POST'])
+@app.route('/sign_in', methods=['POST'])
 def sign_in():
     try:
         # Headers parsing
@@ -65,7 +65,7 @@ def sign_in():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/sign_out', methods=['POST'])
+@app.route('/sign_out', methods=['POST'])
 def sign_out():
     try:
         # Headers parsing
@@ -89,7 +89,7 @@ def sign_out():
         return {"Error": "Authorization: please provide valid credentials in request"}
 
 
-@app.route('/authorization/perform_action', methods=['POST'])
+@app.route('/perform_action', methods=['POST'])
 def perform_action():
     try:
         # Headers parsing
@@ -253,17 +253,13 @@ def place_bid():
     # return {"result": f"Added new bid, ID {next_id} assigned", "bid_id": next_id}
 
 
-@app.route("/get_all_my_bids", methods=['POST'])
+@app.route("/get_all_my_bids", methods=['GET'])
 def get_my_bids():
     """
     This API method can be used to get all bids placed by customer with provided customer ID.
     :return: JSON
-    Body sample:
-    {
-    "owner_id":"1032",
-    "token": "a#rf$1vc"
-    }
     """
+
     action_id = 5  # View private bids
     auth_token = request.headers.get('jwt')
 
@@ -286,9 +282,72 @@ def get_my_bids():
 
     return {"result": f"Action {action_id} was successfully performed"}
 
-
     # logging.info(f"Gateway: get all my bids, lender token validated: {token}")
     # return simplejson.dumps(reporter.get_bids_by_lender(lender_id))
+
+
+@app.route("/get_all_my_offers", methods=['GET'])
+def get_my_offers():
+    """
+    This API method can be used to get all offers placed by customer with provided customer ID.
+
+    """
+    action_id = 6  # View private offers
+    auth_token = request.headers.get('jwt')
+
+    if not auth_token:
+        logging.warning("JWT is missing in request headers")
+        return {"Authorization": "JWT is missing in request headers"}
+
+    logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
+                 f"addressing the Authorization module")
+
+    if auth_token == "":
+        return {"error": f"Wrong credentials"}
+
+    permissions_verification_result = authorization.verify_token(auth_token, action_id)
+
+    if 'error' in permissions_verification_result.keys():
+        return {"Error": permissions_verification_result['error']}
+
+    borrower_id = authorization.get_user_data_by_jwt(auth_token)
+
+    return {"result": f"Action {action_id} was successfully performed"}
+
+    #
+    # logging.info(f"Gateway: get all my offers, borrower token validated: {token}")
+    # return simplejson.dumps(reporter.get_offers_by_borrower(borrower_id))
+
+
+@app.route("/get_all_my_matches", methods=['GET'])
+def get_my_matches():
+    """
+    This API method can be used to get all matches related to given customer ID.
+    :return: JSON
+
+    """
+    action_id = 7  # View private matches
+    auth_token = request.headers.get('jwt')
+
+    if not auth_token:
+        logging.warning("JWT is missing in request headers")
+        return {"Authorization": "JWT is missing in request headers"}
+
+    logging.info(f"Authorization: User {auth_token} tries to perform action {action_id}, "
+                 f"addressing the Authorization module")
+
+    if auth_token == "":
+        return {"error": f"Wrong credentials"}
+
+    permissions_verification_result = authorization.verify_token(auth_token, action_id)
+
+    if 'error' in permissions_verification_result.keys():
+        return {"Error": permissions_verification_result['error']}
+
+    owner_id = authorization.get_user_data_by_jwt(auth_token)
+
+    # logging.info(f"Gateway: get all my matches, customer's token validated: {token}")
+    # return simplejson.dumps(reporter.get_matches_by_owner(owner_id))
 
 
 
